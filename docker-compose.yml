@@ -6,6 +6,8 @@ services:
       MYSQL_DATABASE: fastapi-db
       MYSQL_USER: user
       MYSQL_PASSWORD: password123
+    ports:
+      - "3306:3306"
 
     volumes:
       - mysqldata:/var/lib/mysql
