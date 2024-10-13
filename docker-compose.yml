@@ -1,0 +1,28 @@
+services:
+  mysql:
+    image: mysql:8.4.2
+    environment:
+      MYSQL_ROOT_PASSWORD: password123
+      MYSQL_DATABASE: fastapi-db
+      MYSQL_USER: user
+      MYSQL_PASSWORD: password123
+
+    volumes:
+      - mysqldata:/var/lib/mysql
+    networks:
+      - backend
+    deploy:
+      restart_policy:
+        condition: on-failure
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+
+volumes:
+  mysqldata:
+    driver: local
+
+networks:
+  backend:
+    driver: bridge
