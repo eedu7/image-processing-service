@@ -10,7 +10,7 @@ def main():
 
     args = parser.parse_args()
 
-    uvicorn.run("api:app", host=args.host, port=args.port, reload=True)
+    uvicorn.run("route:app", host=args.host, port=args.port, reload=True)
 
 
 if __name__ == "__main__":

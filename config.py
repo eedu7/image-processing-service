@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings
 
 class ConfigSettings(BaseSettings):
     MYSQL_URL: str
-    SECRET_KEY: str
+    JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"  # Add a default value if necessary
     JWT_EXPIRY: int = 60 * 24 * 7  # 1 week expiry by default
 
