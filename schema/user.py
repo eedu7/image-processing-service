@@ -31,4 +31,4 @@ class UserProfileData(UserRead):
 
 
 class CurrentUser(BaseModel):
-    id: int | None = Field(None, description="ID of the user",examples=[1, 2])
+    id: int | None = Field(None, description="ID of the user", examples=[1, 2])

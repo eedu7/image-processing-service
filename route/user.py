@@ -13,10 +13,11 @@ from utils.dependency.authentication import AuthenticationRequired
 router = APIRouter()
 
 
-
-@router.get("/", response_model=List[UserRead], dependencies=[Depends(AuthenticationRequired)])
+@router.get(
+    "/", response_model=List[UserRead], dependencies=[Depends(AuthenticationRequired)]
+)
 async def get_users(
-        skip: int = 0, limit: int = 20, session: AsyncSession = Depends(get_async_session)
+    skip: int = 0, limit: int = 20, session: AsyncSession = Depends(get_async_session)
 ) -> List[User]:
     crud = UserCrud(session=session)
     users = await crud.get_all(skip=skip, limit=limit)
@@ -29,7 +30,9 @@ async def get_users(
 
 
 @router.post("/", response_model=UserRead)
-async def register(data: RegisterUser, session: AsyncSession = Depends(get_async_session)):
+async def register(
+    data: RegisterUser, session: AsyncSession = Depends(get_async_session)
+):
     crud = UserCrud(session=session)
     user = await crud.register_user(data.model_dump())
     if user:
@@ -39,6 +42,8 @@ async def register(data: RegisterUser, session: AsyncSession = Depends(get_async
 
 
 @router.post("/login", response_model=Token)
-async def login(data: LoginUser, session: AsyncSession = Depends(get_async_session)) -> Token:
+async def login(
+    data: LoginUser, session: AsyncSession = Depends(get_async_session)
+) -> Token:
     crud = UserCrud(session=session)
     return await crud.login_user(email=data.email, password=data.password)
