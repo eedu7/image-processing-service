@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 
 class ResizeModel(BaseModel):
@@ -46,15 +46,9 @@ class TransformationModel(BaseModel):
         le=360,
     )
     format: str | None = Field(
-        ".jpg", description="Output image format, must be .jpg, .jpeg, or .png"
+        None, description="Output image format, must be .jpg, .jpeg, or .png"
     )
     filter: FilterModel | None = Field(
         None, description="Filter options such as grayscale or sepia"
     )
 
-    @field_validator("format")
-    def validate_format(cls, v):
-        valid_formats = [".jpg", ".jpeg", ".png"]
-        if v not in valid_formats:
-            raise ValueError(f"Format must be one of {valid_formats}")
-        return v
