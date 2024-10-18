@@ -40,7 +40,7 @@ class TransformationModel(BaseModel):
     )
     crop: CropModel | None = Field(None, description="Cropping transformation options")
     rotate: int = Field(
-        None,
+        0,
         description="Rotation angle in degrees, must be between 0 and 360",
         ge=0,
         le=360,
@@ -51,4 +51,3 @@ class TransformationModel(BaseModel):
     filter: FilterModel | None = Field(
         None, description="Filter options such as grayscale or sepia"
     )
-
