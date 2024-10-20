@@ -6,7 +6,7 @@ class Image(Base):
     __tablename__ = 'image'
 
     id: Mapped[int] = MappedColumn(Integer, primary_key=True, autoincrement=True)
-    name: str = MappedColumn(String(255), nullable=False)
+    name: Mapped[str] = MappedColumn(String(255), nullable=False)
 
     def __str__(self) -> str:
         return f"Image: {self.id}: {self.name}"
