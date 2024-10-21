@@ -2,8 +2,10 @@ from sqlalchemy import Integer, String
 from sqlalchemy.orm import Mapped, MappedColumn
 
 from db import Base
+
+
 class Image(Base):
-    __tablename__ = 'image'
+    __tablename__ = "image"
 
     id: Mapped[int] = MappedColumn(Integer, primary_key=True, autoincrement=True)
     name: Mapped[str] = MappedColumn(String(255), nullable=False)
@@ -13,5 +15,3 @@ class Image(Base):
 
     def __repr__(self) -> str:
         return self.__str__()
-
-
