@@ -19,6 +19,23 @@ s3 = boto3.client(
     region_name=config.AWS_REGION,
 )
 
+def image_url(file_name: str, expiration: int = 3600):
+    try:
+        presigned_url = s3.generate_presigned_url(
+            "get_object",
+            Params={
+                "Bucket": config.S3_BUCKET,
+                "Key": file_name,
+            },
+            ExpiresIn=expiration,
+        )
+        return presigned_url
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Failed to generate presigned url: {e}",
+        )
+
 
 @router.get("/")
 async def get_all_images(skip: int = 0, limit: int = 100):
@@ -37,16 +54,14 @@ async def upload_image(
             config.S3_BUCKET,
             file_name,
         )
-        new_image: Image = await image_crud.create(
+        await image_crud.create(
             {
                 "name": file_name,
             }
         )
-        file_url: str = f"https://{config.S3_BUCKET}.s3.{config.AWS_REGION}.amazonaws.com/{file_name}"
         return {
             "message": "Image uploaded successfully!",
-            "file_url": file_url,
-            "image_id": new_image.id,
+            "file_url": image_url(file_name),
         }
 
     except Exception as e:
