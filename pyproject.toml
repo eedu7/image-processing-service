@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "image-processing-service"
+version = "0.1.0"
+description = ""
+authors = ["eedu7 <mueedahmad067@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = {extras = ["all"], version = "^0.115.4"}
+uvicorn = "^0.32.0"
+sqlalchemy = "^2.0.36"
+alembic = "^1.13.3"
+python-jose = "^3.3.0"
+pydantic = "^2.9.2"
+pydantic-settings = "^2.6.0"
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+cryptography = "^43.0.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
