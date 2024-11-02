@@ -1,1 +1,1 @@
-# image-processing-service
+# Image Processing Service
