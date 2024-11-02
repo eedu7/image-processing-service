@@ -15,6 +15,7 @@ class Config(ConfigSettings):
     PORT: int = 8000
     MYSQL_USER: str
     MYSQL_PASSWORD: str
+    MYSQL_ROOT_PASSWORD: str
     MYSQL_DATABASE: str
 
 

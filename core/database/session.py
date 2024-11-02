@@ -6,10 +6,9 @@ from sqlalchemy.ext.asyncio import (AsyncSession, async_sessionmaker,
                                     create_async_engine)
 from sqlalchemy.orm import declarative_base
 
-from core.config import config
+from core.utils import get_database_url
 
-DATABASE_URL: str = f"mysql+aiomysql://{config.MYSQL_USER}:{config.MYSQL_PASSWORD}@127.0.0.1/{config.MYSQL_DATABASE}"
-
+DATABASE_URL: str = get_database_url()
 
 engine = create_async_engine(DATABASE_URL)
 async_session_maker = async_sessionmaker(bind=engine, expire_on_commit=False)
