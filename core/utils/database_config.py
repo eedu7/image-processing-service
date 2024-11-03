@@ -10,5 +10,6 @@ def get_database_url(
     host: str = "127.0.0.1",
     driver: str = "aiomysql",
 ) -> str:
-    database_url: str = f"mysql+{driver}://{user}:{password}@{host}/{database}"
+    database_url: str = f"mysql+{driver}://{user}:{password}@db/{database}"
+    # database_url: str = f"mysql+{driver}://{user}:{password}@{host}/{database}"
     return database_url
