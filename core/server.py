@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from api.v1.users.users import router
+from api import router
 
 app: FastAPI = FastAPI(
     title="Image Processing Service",
