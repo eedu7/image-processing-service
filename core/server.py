@@ -9,7 +9,7 @@ app: FastAPI = FastAPI(
 )
 
 
-app.include_router(router, prefix="/user", tags=["User"])
+app.include_router(router)
 
 
 @app.get("/")
