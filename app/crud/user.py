@@ -1,9 +1,12 @@
+from typing import Any, Dict
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import User
+from app.schemas.responses.token import Token
 from core.crud import BaseCRUD
 from core.exceptions import BadRequestException, NotFoundException
-from core.utils import PasswordHandler
+from core.utils import JWTTokenHandler, PasswordHandler
 
 
 class UserCRUD(BaseCRUD[User]):
@@ -40,3 +43,17 @@ class UserCRUD(BaseCRUD[User]):
             return new_user
         except Exception as e:
             raise BadRequestException(str(e))
+
+    async def login_user(self, user_data: Dict[str, Any]) -> Token:
+        user = await self.get_by_email(user_data["email"])
+        if not user:
+            raise BadRequestException("User not found!")
+
+        if not PasswordHandler.verify_password(user.password, user_data["password"]):
+            raise BadRequestException("Invalid Password!")
+
+        payload = {
+            "id": user.id,
+            "email": user.email,
+        }
+        return JWTTokenHandler().generate_token(payload=payload)
