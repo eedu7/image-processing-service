@@ -1,15 +1,22 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, Field
 
 
-class RegisterUser(BaseModel):
-    username: str
-    email: str
-    password: str
+class UserBase(BaseModel):
+    email: EmailStr = Field(
+        ...,
+        description="The email address of the user",
+        examples=["john.doe@example.com"],
+    )
+    password: str = Field(
+        ..., description="The password of the user", examples=["password123"]
+    )
 
-    class Config:
-        orm_mode = True
+
+class RegisterUser(UserBase):
+    username: str = Field(
+        ..., description="The username of the user", examples=["John Doe"]
+    )
 
 
-class LoginUser(BaseModel):
-    email: str
-    password: str
+class LoginUser(UserBase):
+    pass
