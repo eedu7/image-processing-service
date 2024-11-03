@@ -8,6 +8,7 @@ from starlette.requests import HTTPConnection
 from app.schemas.extras import CurrentUser
 from core.utils import JWTTokenHandler
 
+
 class AuthBackend(AuthenticationBackend):
     async def authenticate(
         self, conn: HTTPConnection
@@ -29,7 +30,8 @@ class AuthBackend(AuthenticationBackend):
 
         try:
             payload = JWTTokenHandler().decode_token(token)
-            user_id = payload.get("user_id")
+            user_id = payload.get("id")
+
         except Exception:
             return False, current_user
 
@@ -37,5 +39,5 @@ class AuthBackend(AuthenticationBackend):
         return True, current_user
 
 
-class AuthenticationMiddlewares(BaseAuthenticationMiddleware):
+class AuthenticationMiddleware(BaseAuthenticationMiddleware):
     pass

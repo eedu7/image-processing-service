@@ -1,5 +1,3 @@
 from .factory import Factory
 
-__all__ = [
-    "Factory"
-]
+__all__ = ["Factory"]

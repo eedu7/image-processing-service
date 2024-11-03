@@ -1,6 +1,3 @@
-from .authentication import AuthBackend, AuthenticationMiddlewares
+from .authentication import AuthBackend, AuthenticationMiddleware
 
-__all__ = [
-    "AuthBackend",
-    "AuthenticationMiddlewares"
-]
+__all__ = ["AuthBackend", "AuthenticationMiddleware"]
