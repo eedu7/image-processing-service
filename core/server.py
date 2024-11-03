@@ -11,6 +11,7 @@ app: FastAPI = FastAPI(
 
 app.include_router(router, prefix="/user", tags=["User"])
 
+
 @app.get("/")
 async def root():
     return {

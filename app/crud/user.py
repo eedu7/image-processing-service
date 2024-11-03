@@ -1,15 +1,14 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.crud import BaseCRUD
 from app.models import User
+from core.crud import BaseCRUD
 from core.exceptions import BadRequestException, NotFoundException
-from core.utils import hash_password
+from core.utils import PasswordHandler
 
 
 class UserCRUD(BaseCRUD[User]):
     def __init__(self, session: AsyncSession):
         super().__init__(model=User, db_session=session)
-
 
     async def get_by_email(self, email: str) -> User | None:
         try:
@@ -27,14 +26,13 @@ class UserCRUD(BaseCRUD[User]):
         except Exception as e:
             raise BadRequestException(str(e))
 
-
     async def register_user(self, user_data):
         user = await self.get_by_email(user_data["email"])
         if user:
             raise BadRequestException("User already exists!")
         try:
             # Hashing password
-            user_data["password"] = hash_password(user_data["password"])
+            user_data["password"] = PasswordHandler.hash_password(user_data["password"])
 
             new_user = await super().create(user_data)
             if not new_user:

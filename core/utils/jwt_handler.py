@@ -1,6 +1,7 @@
 import time
-from typing import Tuple, Dict, Any
-from jose import jwt, JWTError
+from typing import Any, Dict, Tuple
+
+from jose import JWTError, jwt
 
 from core.config import config
 from core.exceptions import BadRequestException
@@ -14,7 +15,7 @@ class JWTTokenHandler:
 
     def encode_token(self, payload: Dict[str, Any]):
         expiration: int = int(time.time()) + self.EXPIRE
-        payload['exp'] = expiration
+        payload["exp"] = expiration
         token = jwt.encode(payload, self.SECRET_KEY, algorithm=self.ALGORITHM)
         return token
 

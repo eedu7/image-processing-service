@@ -1,5 +1,3 @@
 from .base import BaseCRUD
 
-__all__ = [
-    "BaseCRUD"
-]
+__all__ = ["BaseCRUD"]
