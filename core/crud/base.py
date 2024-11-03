@@ -78,20 +78,20 @@ class BaseCRUD(Generic[ModelType]):
             getattr(self.model, field) == value
         )  # TODO: Adjust the types annotation
         result = await self.session.execute(query)
-        return result.first()  # TODO: Adjust the types annotation
+        return result.scalars().first()  # TODO: Adjust the types annotation
 
-    async def get_by_id(self, _id: int) -> ModelType:
+    async def get_by_id(self, _id: str) -> ModelType:
         """
         Retrieve a single record by its unique ID.
 
         Args:
-            _id (int): The unique identifier of the record.
+            _id (str): The unique identifier of the record.
 
         Returns:
             ModelType: The model instance with the specified ID.
         """
-        model = await self.get_by(field="id", value=_id)
-        return model
+        _model = await self.get_by(field="id", value=_id)
+        return _model
 
     async def get_all_by(self, field: str, value: Any) -> List[ModelType]:
         """
