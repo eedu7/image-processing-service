@@ -17,6 +17,9 @@ class Config(ConfigSettings):
     MYSQL_PASSWORD: str
     MYSQL_ROOT_PASSWORD: str
     MYSQL_DATABASE: str
+    JWT_SECRET_KEY: str
+    JWT_ALGORITHM: str
+    JWT_EXPIRY: int = 60 * 24
 
 
 config: Config = Config()
