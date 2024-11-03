@@ -11,7 +11,7 @@ from core.database.mixins import TimestampMixin
 class User(Base, TimestampMixin):
     __tablename__ = "users"
 
-    id: Mapped[uuid.UUID] = mapped_column(
+    id: Mapped[str] = mapped_column(
         CHAR(36), primary_key=True, default=uuid.uuid4, unique=True, nullable=False
     )
     username: Mapped[str] = mapped_column(String(50), nullable=False)

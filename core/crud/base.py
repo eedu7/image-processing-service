@@ -4,7 +4,7 @@ from sqlalchemy import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.sql.expression import select
 
-from app.models import Base
+from core.database import Base
 
 ModelType = TypeVar("ModelType", bound=Base)
 

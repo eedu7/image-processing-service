@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, status
+
 from app.crud.user import UserCRUD
-from app.models import User
+from app.schemas.extras import Token
 from app.schemas.requests.user import LoginUser, RegisterUser
 from app.schemas.responses.user import ResponseUser
 from core.exceptions import BadRequestException
@@ -12,7 +13,7 @@ router: APIRouter = APIRouter()
 
 @router.post("/", response_model=ResponseUser, status_code=status.HTTP_201_CREATED)
 async def register_user(
-        user_data: RegisterUser, user_crud: UserCRUD = Depends(Factory.get_user_crud)
+    user_data: RegisterUser, user_crud: UserCRUD = Depends(Factory.get_user_crud)
 ):
     """
     Register a new user.
@@ -26,9 +27,9 @@ async def register_user(
     return await user_crud.register_user(user_data.model_dump())
 
 
-@router.post("/login", response_model=ResponseUser)
+@router.post("/login", response_model=Token)
 async def login_user(
-        user_data: LoginUser, user_crud: UserCRUD = Depends(Factory.get_user_crud)
+    user_data: LoginUser, user_crud: UserCRUD = Depends(Factory.get_user_crud)
 ):
     """
     Log in a user.
@@ -45,7 +46,7 @@ async def login_user(
 @router.get(
     "/me", dependencies=[Depends(AuthenticationRequired)], response_model=ResponseUser
 )
-async def get_current_user(user: User = Depends(get_current_user)):
+async def get_current_user(user=Depends(get_current_user)):
     """
     Retrieve current user information.
 
@@ -56,11 +57,15 @@ async def get_current_user(user: User = Depends(get_current_user)):
     return user
 
 
-@router.delete("/", dependencies=[Depends(AuthenticationRequired)], status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/",
+    dependencies=[Depends(AuthenticationRequired)],
+    status_code=status.HTTP_204_NO_CONTENT,
+)
 async def delete_user(
-        user_id: str,
-        user_crud: UserCRUD = Depends(Factory.get_user_crud),
-        current_user: User = Depends(get_current_user),
+    user_id: str,
+    user_crud: UserCRUD = Depends(Factory.get_user_crud),
+    current_user=Depends(get_current_user),
 ):
     """
     Delete a user.

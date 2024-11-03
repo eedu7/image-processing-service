@@ -1,8 +1,8 @@
 """Initial Migration
 
-Revision ID: b70b9df90e71
+Revision ID: 11f91df090b3
 Revises:
-Create Date: 2024-11-02 09:48:25.141966
+Create Date: 2024-11-03 18:55:08.916530
 
 """
 
@@ -13,7 +13,7 @@ from alembic import op
 from sqlalchemy.dialects import mysql
 
 # revision identifiers, used by Alembic.
-revision: str = "b70b9df90e71"
+revision: str = "11f91df090b3"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
