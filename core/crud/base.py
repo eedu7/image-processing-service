@@ -110,12 +110,12 @@ class BaseCRUD(Generic[ModelType]):
         result = await self.session.scalars(query)
         return result.all()  # TODO: Adjust the types annotation
 
-    async def update(self, _id: int, attributes: dict[str, Any]) -> ModelType | None:
+    async def update(self, _id: str, attributes: dict[str, Any]) -> ModelType | None:
         """
         Update an existing record by ID with specified attributes.
 
         Args:
-            _id (int): The unique identifier of the record to update.
+            _id (str): The unique identifier of the record to update.
             attributes (dict[str, Any]): A dictionary of attributes to update on the model.
 
         Returns:
@@ -130,12 +130,12 @@ class BaseCRUD(Generic[ModelType]):
         await self.session.commit()
         return model
 
-    async def delete(self, _id: int) -> bool | None:
+    async def delete(self, _id: str) -> bool | None:
         """
         Delete a record by its unique ID.
 
         Args:
-            _id (int): The unique identifier of the record to delete.
+            _id (str): The unique identifier of the record to delete.
 
         Returns:
             bool | None: True if deletion was successful, None if the record was not found.

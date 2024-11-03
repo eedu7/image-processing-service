@@ -1,9 +1,9 @@
 import time
-from typing import Any, Dict, Tuple
+from typing import Any, Dict
 
 from jose import JWTError, jwt
 
-from app.schemas.responses.token import Token
+from app.schemas.extras import Token
 from core.config import config
 from core.exceptions import BadRequestException
 

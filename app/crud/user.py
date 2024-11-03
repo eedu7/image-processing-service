@@ -3,7 +3,7 @@ from typing import Any, Dict
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import User
-from app.schemas.responses.token import Token
+from app.schemas.extras import Token
 from core.crud import BaseCRUD
 from core.exceptions import BadRequestException, NotFoundException
 from core.utils import JWTTokenHandler, PasswordHandler
