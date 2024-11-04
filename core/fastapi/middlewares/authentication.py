@@ -1,8 +1,9 @@
 from typing import Optional, Tuple
 
 from starlette.authentication import AuthenticationBackend
-from starlette.middleware.authentication import \
-    AuthenticationMiddleware as BaseAuthenticationMiddleware
+from starlette.middleware.authentication import (
+    AuthenticationMiddleware as BaseAuthenticationMiddleware,
+)
 from starlette.requests import HTTPConnection
 
 from app.schemas.extras import CurrentUser

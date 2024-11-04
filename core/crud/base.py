@@ -93,19 +93,26 @@ class BaseCRUD(Generic[ModelType]):
         _model = await self.get_by(field="id", value=_id)
         return _model
 
-    async def get_all_by(self, field: str, value: Any) -> List[ModelType]:
+    async def get_all_by(
+        self, field: str, value: Any, skip: int = 0, limit: int = 20
+    ) -> List[ModelType]:
         """
         Retrieve all records that match a specific field and value.
 
         Args:
             field (str): The field name to filter by.
             value (Any): The value to filter the field with.
+            skip (int): Number of records to skip for pagination.
+            limit (int): Maximum number of records to retrieve.
 
         Returns:
             List[ModelType]: A list of model instances matching the criteria.
         """
-        query = select(self.model).where(
-            getattr(self.model, field) == value
+        query = (
+            select(self.model)
+            .where(getattr(self.model, field) == value)
+            .offset(skip)
+            .limit(limit)
         )  # TODO: Adjust the types annotation
         result = await self.session.scalars(query)
         return result.all()  # TODO: Adjust the types annotation
