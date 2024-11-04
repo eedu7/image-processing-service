@@ -26,3 +26,15 @@ def save_uploaded_image(image: UploadFile, folder: str = "images") -> Tuple[str,
         raise BadRequestException(f"Failed to save image: {e}")
 
     return file_path, file_name
+
+def remove_image(file_name: str) -> None:
+
+    file_path = f"images/{file_name}"
+
+    if not os.path.exists(file_path):
+        raise BadRequestException(f"Image file does not exist: {file_path}")
+
+    try:
+        os.remove(file_path)
+    except Exception as e:
+        raise BadRequestException(f"Failed to delete image: {e}")
