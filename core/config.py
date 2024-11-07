@@ -20,6 +20,10 @@ class Config(ConfigSettings):
     JWT_SECRET_KEY: str
     JWT_ALGORITHM: str
     JWT_EXPIRY: int = 60 * 24
+    AWS_ACCESS_KEY: str
+    AWS_SECRET_KEY: str
+    AWS_REGION: str
+    AWS_S3_BUCKET_NAME: str
 
 
 config: Config = Config()

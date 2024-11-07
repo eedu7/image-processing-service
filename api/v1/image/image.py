@@ -57,18 +57,11 @@ async def upload_image(
 
 @router.post("/transform-image")
 async def transform_image(image_id: str, image_transformation: ImageTransformation,image_crud: ImageCRUD = Depends(Factory.get_image_crud),
-                          current_user = Depends(get_current_user),):
-    # Check if the image user id is the same as the current user id
-
-    # Get the image transformation data
-
-    # Perform Transformation
-
-    # Save the image
-
-    # Return a Json Response
-
-
+                          current_user = Depends(get_current_user)):
+    image_data = await image_crud.get_by_id(image_id)
+    image_name = image_data.name
+    image = read_image("17307378541ff182e9-d89f-4a2f-bb95-0515828f11c0.png")
+    return FileResponse(image)
     return image_transformation.model_dump(exclude_none=True)
 
 
