@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import FileResponse
+
 from app.crud.image import ImageCRUD
 from app.schemas.requests.image import ImageTransformation
 from core.exceptions import BadRequestException
 from core.factory import Factory
 from core.fastapi.dependencies import AuthenticationRequired, get_current_user
 from core.utils import remove_image
-from core.utils.images import save_uploaded_image, read_image
+from core.utils.aws_utils import upload_image_to_s3
+from core.utils.images import create_file_name
 
 router: APIRouter = APIRouter(dependencies=[Depends(AuthenticationRequired)])
 
@@ -23,8 +25,11 @@ async def get_images(
 
 
 @router.get("/{image_id}")
-async def get_image(image_id: str, image_crud: ImageCRUD = Depends(Factory.get_image_crud),
-                    current_user=Depends(get_current_user)):
+async def get_image(
+    image_id: str,
+    image_crud: ImageCRUD = Depends(Factory.get_image_crud),
+    current_user=Depends(get_current_user),
+):
     image = await image_crud.get_by_id(image_id)
     if image.user_id != current_user.id:
         raise BadRequestException("Unauthorized")
@@ -33,41 +38,48 @@ async def get_image(image_id: str, image_crud: ImageCRUD = Depends(Factory.get_i
     file_path: str = f"images/{file_name}"
     return FileResponse(file_path, media_type=f"image/{media_type}")
 
+
 @router.post("/upload-image")
 async def upload_image(
     image: UploadFile = File(
         ...,
-
     ),
     current_user=Depends(get_current_user),
     image_crud: ImageCRUD = Depends(Factory.get_image_crud),
 ):
     user_id: str = current_user.id
 
-    file_path, file_name = save_uploaded_image(image)
+    file_name = create_file_name(image.filename)
 
-    image_data = await image_crud.create(
-        {
-            "name": file_name,
-            "user_id": user_id,
-        }
-    )
+    file_content = await image.read()
 
-    return image_data
+    url = upload_image_to_s3(file_content, file_name, image.content_type)
+
+    data = {
+        "name": file_name,
+        "user_id": user_id,
+    }
+    await image_crud.create(data)
+    data["url"] = url
+    return data
+
 
 @router.post("/transform-image")
-async def transform_image(image_id: str, image_transformation: ImageTransformation,image_crud: ImageCRUD = Depends(Factory.get_image_crud),
-                          current_user = Depends(get_current_user)):
-    image_data = await image_crud.get_by_id(image_id)
-    image_name = image_data.name
-    image = read_image("17307378541ff182e9-d89f-4a2f-bb95-0515828f11c0.png")
-    return FileResponse(image)
+async def transform_image(
+    image_id: str,
+    image_transformation: ImageTransformation,
+    image_crud: ImageCRUD = Depends(Factory.get_image_crud),
+    current_user=Depends(get_current_user),
+):
     return image_transformation.model_dump(exclude_none=True)
 
 
 @router.delete("/delete-image/{image_id}")
-async def delete_image(image_id: str, current_user=Depends(get_current_user),
-                       image_crud: ImageCRUD = Depends(Factory.get_image_crud)):
+async def delete_image(
+    image_id: str,
+    current_user=Depends(get_current_user),
+    image_crud: ImageCRUD = Depends(Factory.get_image_crud),
+):
     image = await image_crud.get_by_id(image_id)
     if image.user_id != current_user.id:
         raise BadRequestException("Unauthorized to delete this image")

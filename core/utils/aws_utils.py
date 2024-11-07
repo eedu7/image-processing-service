@@ -1,37 +1,49 @@
-import boto3
-from botocore.exceptions import ClientError
 from typing import Optional
-from icecream import ic
+
+import boto3
+from botocore.exceptions import ClientError, NoCredentialsError
+
+from core.config import config
+from core.exceptions import BadRequestException
+
+AWS_ACCESS_KEY = config.AWS_ACCESS_KEY
+AWS_SECRET_KEY = config.AWS_SECRET_KEY
+BUCKET_NAME = config.AWS_S3_BUCKET_NAME
+REGION_NAME = config.AWS_REGION
 
 
-class S3Service:
-    def __init__(self, bucket_name: str, s3_key: str, region_name: str):
-        self.s3_client = boto3.client("s3", region_name=region_name)
-        self.bucket_name = bucket_name
-        self.s3_key = s3_key
+def upload_image_to_s3(
+    file_data: bytes, s3_key: str, content_type: str
+) -> Optional[str]:
+    """
+    Upload an image to an AWS S3 bucket.
 
-    async def upload_file(self, file):
-        try:
-            self.s3_client.upload_file(file, self.bucket_name, self.s3_key)
-            return True
-        except ClientError as e:
-            return False
-
-    async def get_file_url(self, s3_key: str, expiration: int = 3600) -> Optional[str]:
-        """Generate a pre-signed URL for the file if it is an image"""
-        try:
-            response = self.s3_client.head_object(Bucket=self.bucket_name, Key=s3_key)
-            content_type = response.get("ContentType")
-            if "image" in content_type:
-                url = self.s3_client.generate_presigned_url(
-                    "get_object",
-                    Params={"Bucket": self.bucket_name, "Key": s3_key},
-                    ExpiresIn=expiration,
-                )
-                return url
-            else:
-                ic("File is not an image, cannot generate URL.")
-                return None
-        except ClientError as e:
-            ic(f"Error generating URL: {e}")
-            return None
+    :param file_data: The image file data as bytes.
+    :param s3_key: The key (path) to store the file in the bucket.
+    :param content_type: The MIME type of the file (e.g., 'image/jpeg').
+    :return: The public URL of the uploaded image if successful, None otherwise.
+    """
+    try:
+        s3 = boto3.client(
+            "s3",
+            aws_access_key_id=AWS_ACCESS_KEY,
+            aws_secret_access_key=AWS_SECRET_KEY,
+            region_name=REGION_NAME,
+        )
+        # Upload the file to S3
+        s3.put_object(
+            Bucket=BUCKET_NAME,
+            Key=s3_key,
+            Body=file_data,
+            ContentType=content_type,
+            ACL="public-read",
+        )
+        # Construct the public URL
+        url = f"https://{BUCKET_NAME}.s3.{REGION_NAME}.amazonaws.com/{s3_key}"
+        return url
+    except NoCredentialsError:
+        raise BadRequestException("AWS credentials not available.")
+    except ClientError as e:
+        raise BadRequestException(f"Error uploading image: {e}")
+    except Exception as e:
+        raise BadRequestException(f"Unexpected error: {e}")
