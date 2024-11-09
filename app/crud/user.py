@@ -22,7 +22,6 @@ class UserCRUD(BaseCRUD[User]):
 
     async def get_by_id(self, _id: str) -> User:
         try:
-            print("Get user by id")
             user = await super().get_by_id(_id)
             if not user:
                 raise NotFoundException("User not found!")
