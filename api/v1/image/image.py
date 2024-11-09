@@ -8,7 +8,7 @@ from core.exceptions import BadRequestException
 from core.factory import Factory
 from core.fastapi.dependencies import AuthenticationRequired, get_current_user
 from core.utils.aws_utils import AWSService
-from core.utils.images import create_file_name, crop_image, resize_image, rotate_image, add_watermark
+from core.utils.images import create_file_name, crop_image, resize_image, rotate_image, add_watermark, apply_filter
 
 router: APIRouter = APIRouter(dependencies=[Depends(AuthenticationRequired)])
 
@@ -105,9 +105,13 @@ async def transform_image(
     if watermark is not None:
         image = add_watermark(image, watermark)
 
-    filter_image = image_transformation.get("filter", None)
+    filter_image: Dict[str, bool] | None = image_transformation.get("filter", None)
     if filter_image is not None:
-        ...
+        if filter_image["grayscale"]:
+            filter_type = "grayscale"
+        else:
+            filter_type = "sepia"
+        image = apply_filter(image, filter_type)
 
     url = await AWSService().upload_image_to_s3(
         image, saved_image.name, content_type=content_type
