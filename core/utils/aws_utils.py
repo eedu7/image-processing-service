@@ -36,7 +36,6 @@ def upload_image_to_s3(
             Key=s3_key,
             Body=file_data,
             ContentType=content_type,
-            ACL="public-read",
         )
         # Construct the public URL
         url = f"https://{BUCKET_NAME}.s3.{REGION_NAME}.amazonaws.com/{s3_key}"
