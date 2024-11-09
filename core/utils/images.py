@@ -66,7 +66,7 @@ def crop_image(image_bytes: bytes, x: int, y: int, width: int, height: int) -> b
         bytes: The cropped image in bytes.
     """
     image = decode_image(image_bytes)
-    cropped = image[y: y + height, x: x + width]
+    cropped = image[y : y + height, x : x + width]
     _, output_bytes = cv2.imencode(".jpg", cropped)
     return output_bytes.tobytes()
 
@@ -92,12 +92,12 @@ def rotate_image(image_bytes: bytes, angle: int) -> bytes:
 
 
 def add_watermark(
-        image_bytes: bytes,
-        watermark_text: str,
-        position: Tuple[int, int] = (10, 10),
-        font_scale: float = 1.0,
-        color: Tuple[int, int, int] = (255, 255, 255),
-        thickness: int = 2,
+    image_bytes: bytes,
+    watermark_text: str,
+    position: Tuple[int, int] = (10, 10),
+    font_scale: float = 1.0,
+    color: Tuple[int, int, int] = (255, 255, 255),
+    thickness: int = 2,
 ) -> bytes:
     """
     Add a text watermark to an image.
@@ -154,13 +154,13 @@ def apply_filter(image_bytes: bytes, filter_type: str) -> bytes:
     return output_bytes.tobytes()
 
 
-from typing import Dict, Any
+from typing import Any, Dict
 
 
 def apply_image_transformations(
-        image_bytes: bytes,
-        transformations: Dict[str, Any],
-        original_format: str,
+    image_bytes: bytes,
+    transformations: Dict[str, Any],
+    original_format: str,
 ) -> bytes:
     """
     Applies a series of transformations to the image, preserving the original format unless specified.
@@ -183,21 +183,28 @@ def apply_image_transformations(
         ValueError: If the format is unsupported or encoding fails.
     """
     # Apply transformations step by step
-    if "resize" in transformations:
-        resize = transformations["resize"]
+    resize = transformations.get("resize", None)
+    crop = transformations.get("crop", None)
+    rotate = transformations.get("rotate", None)
+    watermark = transformations.get("watermark", None)
+    filter_image = transformations.get("filter", None)
+
+    if resize is not None:
         image_bytes = resize_image(image_bytes, resize["width"], resize["height"])
 
-    if "crop" in transformations:
+    if crop is not None:
         crop = transformations["crop"]
-        image_bytes = crop_image(image_bytes, crop["x"], crop["y"], crop["width"], crop["height"])
+        image_bytes = crop_image(
+            image_bytes, crop["x"], crop["y"], crop["width"], crop["height"]
+        )
 
-    if "rotate" in transformations:
+    if rotate is not None:
         image_bytes = rotate_image(image_bytes, transformations["rotate"])
 
-    if "watermark" in transformations:
+    if watermark is not None:
         image_bytes = add_watermark(image_bytes, transformations["watermark"])
 
-    if "filter" in transformations:
+    if filter_image is not None:
         if transformations["filter"].get("grayscale", False):
             image_bytes = apply_filter(image_bytes, "grayscale")
         elif transformations["filter"].get("sepia", False):
@@ -217,4 +224,3 @@ def apply_image_transformations(
     if not is_success:
         raise ValueError("Failed to re-encode the image")
     return buffer.tobytes()
-

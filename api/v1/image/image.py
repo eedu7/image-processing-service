@@ -1,25 +1,22 @@
 from fastapi import APIRouter, Depends, File, UploadFile
 
-from fastapi import APIRouter, Depends, File, UploadFile
-
 from app.crud.image import ImageCRUD
 from app.schemas.requests.image import ImageTransformation
 from core.exceptions import BadRequestException
 from core.factory import Factory
 from core.fastapi.dependencies import AuthenticationRequired, get_current_user
 from core.utils.aws_utils import AWSService
-from core.utils.images import create_file_name, apply_image_transformations
+from core.utils.images import apply_image_transformations, create_file_name
 
 router: APIRouter = APIRouter(dependencies=[Depends(AuthenticationRequired)])
 
 
-
 @router.get("/")
 async def get_images(
-        skip: int = 0,
-        limit: int = 20,
-        image_crud: ImageCRUD = Depends(Factory.get_image_crud),
-        current_user=Depends(get_current_user),
+    skip: int = 0,
+    limit: int = 20,
+    image_crud: ImageCRUD = Depends(Factory.get_image_crud),
+    current_user=Depends(get_current_user),
 ):
     user_id: str = current_user.id
     return await image_crud.get_all_by("user_id", user_id, skip=skip, limit=limit)
@@ -27,9 +24,9 @@ async def get_images(
 
 @router.get("/{image_id}")
 async def get_image(
-        image_id: str,
-        image_crud: ImageCRUD = Depends(Factory.get_image_crud),
-        current_user=Depends(get_current_user),
+    image_id: str,
+    image_crud: ImageCRUD = Depends(Factory.get_image_crud),
+    current_user=Depends(get_current_user),
 ):
     image = await image_crud.get_by_id(image_id)
     if image.user_id != current_user.id:
@@ -41,11 +38,11 @@ async def get_image(
 
 @router.post("/upload-image")
 async def upload_image(
-        image: UploadFile = File(
-            ...,
-        ),
-        current_user=Depends(get_current_user),
-        image_crud: ImageCRUD = Depends(Factory.get_image_crud),
+    image: UploadFile = File(
+        ...,
+    ),
+    current_user=Depends(get_current_user),
+    image_crud: ImageCRUD = Depends(Factory.get_image_crud),
 ):
     user_id: str = current_user.id
 
@@ -72,10 +69,10 @@ async def upload_image(
 
 @router.post("/transform-image")
 async def transform_image(
-        image_id: str,
-        image_transformation: ImageTransformation,
-        image_crud: ImageCRUD = Depends(Factory.get_image_crud),
-        current_user=Depends(get_current_user),
+    image_id: str,
+    image_transformation: ImageTransformation,
+    image_crud: ImageCRUD = Depends(Factory.get_image_crud),
+    current_user=Depends(get_current_user),
 ):
     """
     Transform an image by applying resizing, cropping, rotating, watermarking, filtering, and/or format change.
@@ -107,27 +104,34 @@ async def transform_image(
 
     # Apply all transformations using the helper function
     try:
-        image_bytes = apply_image_transformations(image_bytes, transformations, original_format)
+        image_bytes = apply_image_transformations(
+            image_bytes, transformations, original_format
+        )
     except ValueError as e:
         raise BadRequestException(str(e))
 
     # Determine content type and file name for the transformed image
     format_image = transformations.get("format", original_format).lower()
     content_type = f"image/{format_image}"
-    new_file_name = saved_image.name.rsplit(".", 1)[
-                        0] + f".{format_image}" if format_image != original_format else saved_image.name
+    new_file_name = (
+        saved_image.name.rsplit(".", 1)[0] + f".{format_image}"
+        if format_image != original_format
+        else saved_image.name
+    )
 
     # Upload the transformed image back to S3
-    url = await AWSService().upload_image_to_s3(image_bytes, new_file_name, content_type=content_type)
+    url = await AWSService().upload_image_to_s3(
+        image_bytes, new_file_name, content_type=content_type
+    )
 
     return {"message": "Image successfully transformed", "url": url}
 
 
 @router.delete("/delete-image/{image_id}")
 async def delete_image(
-        image_id: str,
-        current_user=Depends(get_current_user),
-        image_crud: ImageCRUD = Depends(Factory.get_image_crud),
+    image_id: str,
+    current_user=Depends(get_current_user),
+    image_crud: ImageCRUD = Depends(Factory.get_image_crud),
 ):
     image = await image_crud.get_by_id(image_id)
     if image.user_id != current_user.id:

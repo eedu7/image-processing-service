@@ -12,4 +12,3 @@ def get_database_url(
 ) -> str:
     database_url: str = f"mysql+{driver}://{user}:{password}@{host}/{database}"
     return database_url
-
