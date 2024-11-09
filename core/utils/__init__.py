@@ -1,5 +1,5 @@
 from .database_config import get_database_url
-from .images import create_file_name, remove_image
+from .images import create_file_name
 from .jwt_handler import JWTTokenHandler
 from .password_handler import PasswordHandler
 
@@ -8,5 +8,4 @@ __all__ = [
     "PasswordHandler",
     "JWTTokenHandler",
     "create_file_name",
-    "remove_image",
 ]

@@ -1,86 +1,120 @@
-import os
 import time
-from typing import Any, Tuple
+from typing import Tuple
 
 import cv2
 import numpy as np
-from fastapi import UploadFile
 
-from core.exceptions import BadRequestException, NotFoundException
+from core.exceptions import BadRequestException
+
+
+def decode_image(image_bytes: bytes) -> np.ndarray:
+    """
+    Decode an image from bytes.
+
+    Args:
+        image_bytes (bytes): The image in bytes.
+
+    Returns:
+        np.ndarray: The decoded image as a NumPy array.
+    """
+    return cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_COLOR)
 
 
 def create_file_name(file_name: str) -> str:
-    file_name: str = str(int(time.time())) + file_name.replace(" ", "")
-    return file_name
+    """
+    Create a unique file name by appending the current timestamp to the given file name.
+
+    Args:
+        file_name (str): The original file name.
+
+    Returns:
+        str: The new file name with a timestamp prefix.
+    """
+    return str(int(time.time())) + file_name.replace(" ", "")
 
 
-def read_image(file_name: str) -> Any:
-    file_path = f"images/{file_name}"
-    if not os.path.exists(file_path):
-        raise NotFoundException("File does not exist")
+def resize_image(image_bytes: bytes, width: int, height: int) -> bytes:
+    """
+    Resize an image to the specified dimensions.
 
-    image = cv2.imread(file_path)
-    if image is None:
-        raise BadRequestException(f"Failed to read image: {file_path}")
+    Args:
+        image_bytes (bytes): The image in bytes.
+        width (int): The desired width of the image.
+        height (int): The desired height of the image.
 
-    return image
-
-
-def save_uploaded_image(image: UploadFile, folder: str = "images") -> Tuple[str, str]:
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-
-    file_name: str = create_file_name(image.filename)
-
-    file_path = os.path.join(folder, file_name)
-
-    try:
-        with open(file_path, "wb") as buffer:
-            buffer.write(image.file.read())
-    except Exception as e:
-        raise BadRequestException(f"Failed to save image: {e}")
-
-    return file_path, file_name
+    Returns:
+        bytes: The resized image in bytes.
+    """
+    image = decode_image(image_bytes)
+    resized = cv2.resize(image, (width, height))
+    _, output_bytes = cv2.imencode(".jpg", resized)
+    return output_bytes.tobytes()
 
 
-def remove_image(file_name: str) -> None:
-    file_path = f"images/{file_name}"
+def crop_image(image_bytes: bytes, x: int, y: int, width: int, height: int) -> bytes:
+    """
+    Crop an image to the specified rectangle.
 
-    if not os.path.exists(file_path):
-        raise BadRequestException(f"Image file does not exist: {file_path}")
+    Args:
+        image_bytes (bytes): The image in bytes.
+        x (int): The x-coordinate of the top-left corner of the crop area.
+        y (int): The y-coordinate of the top-left corner of the crop area.
+        width (int): The width of the crop area.
+        height (int): The height of the crop area.
 
-    try:
-        os.remove(file_path)
-    except Exception as e:
-        raise BadRequestException(f"Failed to delete image: {e}")
-
-
-def resize_image(image: np.ndarray, width: int, height: int) -> np.ndarray:
-    return cv2.resize(image, (width, height))
-
-
-def crop_image(
-    image: np.ndarray, x: int, y: int, width: int, height: int
-) -> np.ndarray:
-    return image[y : y + height, x : x + width]
+    Returns:
+        bytes: The cropped image in bytes.
+    """
+    image = decode_image(image_bytes)
+    cropped = image[y : y + height, x : x + width]
+    _, output_bytes = cv2.imencode(".jpg", cropped)
+    return output_bytes.tobytes()
 
 
-def rotate_image(image: np.ndarray, angle: int) -> np.ndarray:
+def rotate_image(image_bytes: bytes, angle: int) -> bytes:
+    """
+    Rotate an image by the specified angle around its center.
+
+    Args:
+        image_bytes (bytes): The image in bytes.
+        angle (int): The angle in degrees to rotate the image.
+
+    Returns:
+        bytes: The rotated image in bytes.
+    """
+    image = decode_image(image_bytes)
     (h, w) = image.shape[:2]
     center = (w // 2, h // 2)
     matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
-    return cv2.warpAffine(image, matrix, (w, h))
+    rotated = cv2.warpAffine(image, matrix, (w, h))
+    _, output_bytes = cv2.imencode(".jpg", rotated)
+    return output_bytes.tobytes()
 
 
 def add_watermark(
-    image: np.ndarray,
+    image_bytes: bytes,
     watermark_text: str,
     position: Tuple[int, int] = (10, 10),
     font_scale: float = 1.0,
     color: Tuple[int, int, int] = (255, 255, 255),
     thickness: int = 2,
-) -> np.ndarray:
-    return cv2.putText(
+) -> bytes:
+    """
+    Add a text watermark to an image.
+
+    Args:
+        image_bytes (bytes): The image in bytes.
+        watermark_text (str): The text to use as the watermark.
+        position (Tuple[int, int]): The position of the watermark text.
+        font_scale (float): The font scale of the watermark text.
+        color (Tuple[int, int, int]): The color of the watermark text in BGR format.
+        thickness (int): The thickness of the watermark text.
+
+    Returns:
+        bytes: The image with the watermark in bytes.
+    """
+    image = decode_image(image_bytes)
+    watermarked = cv2.putText(
         image.copy(),
         watermark_text,
         position,
@@ -89,68 +123,32 @@ def add_watermark(
         color,
         thickness,
     )
+    _, output_bytes = cv2.imencode(".jpg", watermarked)
+    return output_bytes.tobytes()
 
 
-def flip_image(image: np.ndarray, flip_code: int) -> np.ndarray:
-    return cv2.flip(image, flip_code)
+def apply_filter(image_bytes: bytes, filter_type: str) -> bytes:
+    """
+    Apply a specified filter to an image.
 
+    Args:
+        image_bytes (bytes): The image in bytes.
+        filter_type (str): The type of filter to apply ("grayscale" or "sepia").
 
-def mirror_image(image: np.ndarray) -> np.ndarray:
-    return flip_image(image, flip_code=1)
-
-
-def compress_image(image: np.ndarray, quality: int = 90) -> np.ndarray:
-    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), quality]
-    result, encoded_img = cv2.imencode(".jpg", image, encode_param)
-    if not result:
-        raise BadRequestException("Failed to compress image")
-    return cv2.imdecode(encoded_img, 1)
-
-
-def change_format(image: np.ndarray, new_format: str) -> bytes:
-    encoded_param = (
-        [int(cv2.IMWRITE_JPEG_QUALITY), 90] if new_format.lower() == "jpg" else []
-    )
-    result, encoded_img = cv2.imencode(f".{new_format}", image, encoded_param)
-    if not result:
-        raise BadRequestException("Failed to change image format")
-    return encoded_img.tobytes()
-
-
-def apply_filter(image: np.ndarray, filter_type: str) -> np.ndarray:
+    Returns:
+        bytes: The filtered image in bytes.
+    """
+    image = decode_image(image_bytes)
     if filter_type == "grayscale":
-        return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        filtered = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     elif filter_type == "sepia":
         kernel = np.array(
             [[0.272, 0.534, 0.131], [0.349, 0.686, 0.168], [0.393, 0.769, 0.189]]
         )
         sepia_image = cv2.transform(image, kernel)
-        return np.clip(sepia_image, 0, 255).astype(np.uint8)
+        filtered = np.clip(sepia_image, 0, 255).astype(np.uint8)
     else:
         raise BadRequestException(f"Unknown filter type: {filter_type}")
 
-
-def save_image(image: np.ndarray, file_name: str, folder: str = "images") -> str:
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-    file_path = os.path.join(folder, file_name)
-    cv2.imwrite(file_path, image)
-    return file_path
-
-
-def process_image(file_name: str):
-    # Load the image (simulating fetching it once)
-    image = read_image(file_name)
-
-    # Apply transformations
-    image = resize_image(image, width=300, height=300)
-    image = crop_image(image, x=10, y=10, width=200, height=200)
-    image = rotate_image(image, angle=45)
-    image = add_watermark(image, watermark_text="Sample Watermark")
-    image = mirror_image(image)
-    image = compress_image(image, quality=80)
-    image = apply_filter(image, filter_type="sepia")
-
-    # Save final image
-    final_file_path = save_image(image, file_name)
-    print(f"Transformed image saved at: {final_file_path}")
+    _, output_bytes = cv2.imencode(".jpg", filtered)
+    return output_bytes.tobytes()

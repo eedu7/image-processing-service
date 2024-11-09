@@ -32,14 +32,28 @@ class AWSService:
         )
 
     async def get_image(self, file_name: str) -> bytes:
+        """
+        Retrieve an image from the S3 bucket.
+
+        Args:
+            file_name (str): The name of the file to retrieve.
+
+        Returns:
+            bytes: The file's contents in bytes.
+
+        Raises:
+            BadRequestException: If there are issues retrieving the file.
+        """
         try:
             response = self.s3_client.get_object(Bucket=self.BUCKET_NAME, Key=file_name)
-            return response['Body'].read()
+            return response["Body"].read()
 
         except NoCredentialsError:
             raise BadRequestException("AWS credentials not available.")
         except ClientError as e:
-            raise BadRequestException(f"Error retrieving object: {e.response['Error']['Message']}")
+            raise BadRequestException(
+                f"Error retrieving object: {e.response['Error']['Message']}"
+            )
         except Exception as e:
             raise BadRequestException(f"Unexpected error: {str(e)}")
 
