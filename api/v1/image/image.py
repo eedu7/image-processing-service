@@ -7,7 +7,7 @@ from core.exceptions import BadRequestException
 from core.factory import Factory
 from core.fastapi.dependencies import AuthenticationRequired, get_current_user
 from core.utils import remove_image
-from core.utils.aws_utils import upload_image_to_s3
+from core.utils.aws_utils import AWSService
 from core.utils.images import create_file_name
 
 router: APIRouter = APIRouter(dependencies=[Depends(AuthenticationRequired)])
@@ -53,15 +53,21 @@ async def upload_image(
 
     file_content = await image.read()
 
-    url = upload_image_to_s3(file_content, file_name, image.content_type)
-
+    # url = upload_image_to_s3(file_content, file_name, image.content_type)
+    url = await AWSService().upload_image_to_s3(
+        file_content, file_name, image.content_type
+    )
     data = {
         "name": file_name,
         "user_id": user_id,
     }
-    await image_crud.create(data)
-    data["url"] = url
-    return data
+    new_image = await image_crud.create(data)
+    return {
+        "id": new_image.id,
+        "name": new_image.name,
+        "user_id": new_image.user_id,
+        "url": url,
+    }
 
 
 @router.post("/transform-image")
@@ -84,5 +90,6 @@ async def delete_image(
     if image.user_id != current_user.id:
         raise BadRequestException("Unauthorized to delete this image")
 
-    remove_image(image.name)
+    await AWSService().delete_object(image.name)
+
     await image_crud.delete(image_id)
