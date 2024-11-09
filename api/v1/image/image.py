@@ -8,7 +8,7 @@ from core.exceptions import BadRequestException
 from core.factory import Factory
 from core.fastapi.dependencies import AuthenticationRequired, get_current_user
 from core.utils.aws_utils import AWSService
-from core.utils.images import create_file_name, crop_image, resize_image, rotate_image
+from core.utils.images import create_file_name, crop_image, resize_image, rotate_image, add_watermark
 
 router: APIRouter = APIRouter(dependencies=[Depends(AuthenticationRequired)])
 
@@ -97,12 +97,14 @@ async def transform_image(
     if rotate is not None:
         image = rotate_image(image, rotate)
 
-    format_image = image_transformation.get("format", None)
+    format_image: str | None = image_transformation.get("format", None)
     if format_image is not None:
         content_type = format_image
-    watermark = image_transformation.get("watermark", None)
+
+    watermark: str | None = image_transformation.get("watermark", None)
     if watermark is not None:
-        ...
+        image = add_watermark(image, watermark)
+
     filter_image = image_transformation.get("filter", None)
     if filter_image is not None:
         ...
