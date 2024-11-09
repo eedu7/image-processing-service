@@ -66,7 +66,7 @@ def crop_image(image_bytes: bytes, x: int, y: int, width: int, height: int) -> b
         bytes: The cropped image in bytes.
     """
     image = decode_image(image_bytes)
-    cropped = image[y : y + height, x : x + width]
+    cropped = image[y: y + height, x: x + width]
     _, output_bytes = cv2.imencode(".jpg", cropped)
     return output_bytes.tobytes()
 
@@ -92,12 +92,12 @@ def rotate_image(image_bytes: bytes, angle: int) -> bytes:
 
 
 def add_watermark(
-    image_bytes: bytes,
-    watermark_text: str,
-    position: Tuple[int, int] = (10, 10),
-    font_scale: float = 1.0,
-    color: Tuple[int, int, int] = (255, 255, 255),
-    thickness: int = 2,
+        image_bytes: bytes,
+        watermark_text: str,
+        position: Tuple[int, int] = (10, 10),
+        font_scale: float = 1.0,
+        color: Tuple[int, int, int] = (255, 255, 255),
+        thickness: int = 2,
 ) -> bytes:
     """
     Add a text watermark to an image.
@@ -152,3 +152,69 @@ def apply_filter(image_bytes: bytes, filter_type: str) -> bytes:
 
     _, output_bytes = cv2.imencode(".jpg", filtered)
     return output_bytes.tobytes()
+
+
+from typing import Dict, Any
+
+
+def apply_image_transformations(
+        image_bytes: bytes,
+        transformations: Dict[str, Any],
+        original_format: str,
+) -> bytes:
+    """
+    Applies a series of transformations to the image, preserving the original format unless specified.
+
+    Args:
+        image_bytes (bytes): The original image in bytes.
+        transformations (dict): A dictionary of transformations to apply. Keys may include:
+            - resize: {"width": int, "height": int}
+            - crop: {"x": int, "y": int, "width": int, "height": int}
+            - rotate: int (degrees)
+            - watermark: str (text to add as a watermark)
+            - filter: {"grayscale": bool, "sepia": bool}
+            - format: Optional[str] (desired output format, e.g., "jpg", "png")
+        original_format (str): The original format of the image (e.g., "png", "jpeg").
+
+    Returns:
+        bytes: The transformed image in bytes.
+
+    Raises:
+        ValueError: If the format is unsupported or encoding fails.
+    """
+    # Apply transformations step by step
+    if "resize" in transformations:
+        resize = transformations["resize"]
+        image_bytes = resize_image(image_bytes, resize["width"], resize["height"])
+
+    if "crop" in transformations:
+        crop = transformations["crop"]
+        image_bytes = crop_image(image_bytes, crop["x"], crop["y"], crop["width"], crop["height"])
+
+    if "rotate" in transformations:
+        image_bytes = rotate_image(image_bytes, transformations["rotate"])
+
+    if "watermark" in transformations:
+        image_bytes = add_watermark(image_bytes, transformations["watermark"])
+
+    if "filter" in transformations:
+        if transformations["filter"].get("grayscale", False):
+            image_bytes = apply_filter(image_bytes, "grayscale")
+        elif transformations["filter"].get("sepia", False):
+            image_bytes = apply_filter(image_bytes, "sepia")
+
+    # Handle format change or preserve original format
+    format_image = transformations.get("format", original_format).lower()
+    if format_image == "string":
+        format_image = original_format
+    valid_formats = {"jpg", "jpeg", "png"}
+    if format_image not in valid_formats:
+        raise ValueError(f"Unsupported format: {format_image}")
+
+    # Convert the image to the desired or original format
+    format_extension = f".{format_image}"
+    is_success, buffer = cv2.imencode(format_extension, decode_image(image_bytes))
+    if not is_success:
+        raise ValueError("Failed to re-encode the image")
+    return buffer.tobytes()
+
