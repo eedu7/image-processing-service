@@ -96,9 +96,10 @@ async def transform_image(
     rotate: int | None = image_transformation.get("rotate", None)
     if rotate is not None:
         image = rotate_image(image, rotate)
+
     format_image = image_transformation.get("format", None)
     if format_image is not None:
-        ...
+        content_type = format_image
     watermark = image_transformation.get("watermark", None)
     if watermark is not None:
         ...
