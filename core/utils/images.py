@@ -1,13 +1,11 @@
 import time
-from typing import Tuple
-
-import cv2
+from typing import Tuple, Dict, Any
+from PIL import Image, ImageDraw, ImageFont
+import io
 import numpy as np
 
-from core.exceptions import BadRequestException
 
-
-def decode_image(image_bytes: bytes) -> np.ndarray:
+def decode_image(image_bytes: bytes) -> Image:
     """
     Decode an image from bytes.
 
@@ -15,9 +13,9 @@ def decode_image(image_bytes: bytes) -> np.ndarray:
         image_bytes (bytes): The image in bytes.
 
     Returns:
-        np.ndarray: The decoded image as a NumPy array.
+        Image: The decoded image as a Pillow Image object.
     """
-    return cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_COLOR)
+    return Image.open(io.BytesIO(image_bytes))
 
 
 def create_file_name(file_name: str) -> str:
@@ -46,9 +44,10 @@ def resize_image(image_bytes: bytes, width: int, height: int) -> bytes:
         bytes: The resized image in bytes.
     """
     image = decode_image(image_bytes)
-    resized = cv2.resize(image, (width, height))
-    _, output_bytes = cv2.imencode(".jpg", resized)
-    return output_bytes.tobytes()
+    resized = image.resize((width, height))
+    img_byte_arr = io.BytesIO()
+    resized.save(img_byte_arr, format='JPEG')
+    return img_byte_arr.getvalue()
 
 
 def crop_image(image_bytes: bytes, x: int, y: int, width: int, height: int) -> bytes:
@@ -66,9 +65,10 @@ def crop_image(image_bytes: bytes, x: int, y: int, width: int, height: int) -> b
         bytes: The cropped image in bytes.
     """
     image = decode_image(image_bytes)
-    cropped = image[y : y + height, x : x + width]
-    _, output_bytes = cv2.imencode(".jpg", cropped)
-    return output_bytes.tobytes()
+    cropped = image.crop((x, y, x + width, y + height))
+    img_byte_arr = io.BytesIO()
+    cropped.save(img_byte_arr, format='JPEG')
+    return img_byte_arr.getvalue()
 
 
 def rotate_image(image_bytes: bytes, angle: int) -> bytes:
@@ -83,12 +83,10 @@ def rotate_image(image_bytes: bytes, angle: int) -> bytes:
         bytes: The rotated image in bytes.
     """
     image = decode_image(image_bytes)
-    (h, w) = image.shape[:2]
-    center = (w // 2, h // 2)
-    matrix = cv2.getRotationMatrix2D(center, angle, 1.0)
-    rotated = cv2.warpAffine(image, matrix, (w, h))
-    _, output_bytes = cv2.imencode(".jpg", rotated)
-    return output_bytes.tobytes()
+    rotated = image.rotate(angle, expand=True)
+    img_byte_arr = io.BytesIO()
+    rotated.save(img_byte_arr, format='JPEG')
+    return img_byte_arr.getvalue()
 
 
 def add_watermark(
@@ -107,24 +105,19 @@ def add_watermark(
         watermark_text (str): The text to use as the watermark.
         position (Tuple[int, int]): The position of the watermark text.
         font_scale (float): The font scale of the watermark text.
-        color (Tuple[int, int, int]): The color of the watermark text in BGR format.
+        color (Tuple[int, int, int]): The color of the watermark text in RGB format.
         thickness (int): The thickness of the watermark text.
 
     Returns:
         bytes: The image with the watermark in bytes.
     """
     image = decode_image(image_bytes)
-    watermarked = cv2.putText(
-        image.copy(),
-        watermark_text,
-        position,
-        cv2.FONT_HERSHEY_SIMPLEX,
-        font_scale,
-        color,
-        thickness,
-    )
-    _, output_bytes = cv2.imencode(".jpg", watermarked)
-    return output_bytes.tobytes()
+    draw = ImageDraw.Draw(image)
+    font = ImageFont.load_default()
+    draw.text(position, watermark_text, font=font, fill=color)
+    img_byte_arr = io.BytesIO()
+    image.save(img_byte_arr, format='JPEG')
+    return img_byte_arr.getvalue()
 
 
 def apply_filter(image_bytes: bytes, filter_type: str) -> bytes:
@@ -140,21 +133,19 @@ def apply_filter(image_bytes: bytes, filter_type: str) -> bytes:
     """
     image = decode_image(image_bytes)
     if filter_type == "grayscale":
-        filtered = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        filtered = image.convert("L")
     elif filter_type == "sepia":
-        kernel = np.array(
-            [[0.272, 0.534, 0.131], [0.349, 0.686, 0.168], [0.393, 0.769, 0.189]]
-        )
-        sepia_image = cv2.transform(image, kernel)
-        filtered = np.clip(sepia_image, 0, 255).astype(np.uint8)
+        sepia_image = np.array(image)
+        sepia_filter = np.array([[0.272, 0.534, 0.131], [0.349, 0.686, 0.168], [0.393, 0.769, 0.189]])
+        sepia_image = np.dot(sepia_image[...,:3], sepia_filter.T)
+        sepia_image = np.clip(sepia_image, 0, 255).astype(np.uint8)
+        filtered = Image.fromarray(sepia_image)
     else:
-        raise BadRequestException(f"Unknown filter type: {filter_type}")
+        raise ValueError(f"Unknown filter type: {filter_type}")
 
-    _, output_bytes = cv2.imencode(".jpg", filtered)
-    return output_bytes.tobytes()
-
-
-from typing import Any, Dict
+    img_byte_arr = io.BytesIO()
+    filtered.save(img_byte_arr, format='JPEG')
+    return img_byte_arr.getvalue()
 
 
 def apply_image_transformations(
@@ -167,7 +158,7 @@ def apply_image_transformations(
 
     Args:
         image_bytes (bytes): The original image in bytes.
-        transformations (dict): A dictionary of transformations to apply. Keys may include:
+        transformations (dict): A dictionary of transformations to apply.
             - resize: {"width": int, "height": int}
             - crop: {"x": int, "y": int, "width": int, "height": int}
             - rotate: int (degrees)
@@ -193,10 +184,7 @@ def apply_image_transformations(
         image_bytes = resize_image(image_bytes, resize["width"], resize["height"])
 
     if crop is not None:
-        crop = transformations["crop"]
-        image_bytes = crop_image(
-            image_bytes, crop["x"], crop["y"], crop["width"], crop["height"]
-        )
+        image_bytes = crop_image(image_bytes, crop["x"], crop["y"], crop["width"], crop["height"])
 
     if rotate is not None:
         image_bytes = rotate_image(image_bytes, transformations["rotate"])
@@ -219,8 +207,7 @@ def apply_image_transformations(
         raise ValueError(f"Unsupported format: {format_image}")
 
     # Convert the image to the desired or original format
-    format_extension = f".{format_image}"
-    is_success, buffer = cv2.imencode(format_extension, decode_image(image_bytes))
-    if not is_success:
-        raise ValueError("Failed to re-encode the image")
-    return buffer.tobytes()
+    img = decode_image(image_bytes)
+    img_byte_arr = io.BytesIO()
+    img.save(img_byte_arr, format=format_image.upper())
+    return img_byte_arr.getvalue()
