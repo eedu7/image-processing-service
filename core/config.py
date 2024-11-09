@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings
 class ConfigSettings(BaseSettings):
     class Config:
         case_sensitive = True
-        env_file = Path(__file__).parent / "../.env"
+        env_file = "../.env"
         env_file_encoding = "utf-8"
 
 
